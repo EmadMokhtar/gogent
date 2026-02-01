@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -127,15 +128,10 @@ func (l *LongTerm) Count(ctx context.Context) (int, error) {
 
 // trimByImportance removes the least important messages
 func (l *LongTerm) trimByImportance() {
-	// Sort by importance (descending)
-	// Simple bubble sort for demonstration
-	for i := 0; i < len(l.messages)-1; i++ {
-		for j := 0; j < len(l.messages)-i-1; j++ {
-			if l.messages[j].Importance < l.messages[j+1].Importance {
-				l.messages[j], l.messages[j+1] = l.messages[j+1], l.messages[j]
-			}
-		}
-	}
+	// Sort by importance (descending) using efficient sort.Slice
+	sort.Slice(l.messages, func(i, j int) bool {
+		return l.messages[i].Importance > l.messages[j].Importance
+	})
 	
 	// Keep only the most important messages
 	l.messages = l.messages[:l.maxSize]

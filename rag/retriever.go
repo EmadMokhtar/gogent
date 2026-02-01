@@ -40,8 +40,17 @@ func NewRetriever(config RetrieverConfig) *Retriever {
 
 // Retrieve retrieves relevant chunks for a query
 func (r *Retriever) Retrieve(ctx context.Context, query string, filters map[string]interface{}) ([]RetrievalResult, error) {
+	return r.RetrieveWithTopK(ctx, query, r.topK, filters)
+}
+
+// RetrieveWithTopK retrieves relevant chunks for a query with a specific topK
+func (r *Retriever) RetrieveWithTopK(ctx context.Context, query string, topK int, filters map[string]interface{}) ([]RetrievalResult, error) {
 	if query == "" {
 		return nil, fmt.Errorf("query cannot be empty")
+	}
+	
+	if topK <= 0 {
+		topK = r.topK
 	}
 	
 	// Generate embedding for the query
@@ -51,7 +60,7 @@ func (r *Retriever) Retrieve(ctx context.Context, query string, filters map[stri
 	}
 	
 	// Search vector store
-	results, err := r.vectorStore.Search(ctx, queryEmbedding, r.topK, filters)
+	results, err := r.vectorStore.Search(ctx, queryEmbedding, topK, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search vector store: %w", err)
 	}

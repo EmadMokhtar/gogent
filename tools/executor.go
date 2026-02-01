@@ -67,32 +67,38 @@ func (e *Executor) ExecuteBatch(ctx context.Context, requests []struct {
 	Input    map[string]interface{}
 }) ([]*ExecutionResult, error) {
 	results := make([]*ExecutionResult, len(requests))
-	errors := make([]error, len(requests))
+	
+	// Use a channel to collect results
+	type resultWithIndex struct {
+		index  int
+		result *ExecutionResult
+		err    error
+	}
+	
+	resultChan := make(chan resultWithIndex, len(requests))
 	
 	// Execute tools in parallel
-	done := make(chan struct{})
 	for i, req := range requests {
 		go func(idx int, r struct {
 			ToolName string
 			Input    map[string]interface{}
 		}) {
 			result, err := e.Execute(ctx, r.ToolName, r.Input)
-			results[idx] = result
-			errors[idx] = err
+			resultChan <- resultWithIndex{
+				index:  idx,
+				result: result,
+				err:    err,
+			}
 		}(i, req)
 	}
 	
-	// Wait for all to complete
-	go func() {
-		// Simple wait - in production, use sync.WaitGroup
-		<-done
-	}()
-	
-	// Check if any errors occurred
+	// Collect results
 	var firstError error
-	for _, err := range errors {
-		if err != nil && firstError == nil {
-			firstError = err
+	for i := 0; i < len(requests); i++ {
+		res := <-resultChan
+		results[res.index] = res.result
+		if res.err != nil && firstError == nil {
+			firstError = res.err
 		}
 	}
 	

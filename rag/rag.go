@@ -169,11 +169,8 @@ func (r *RAG) Query(ctx context.Context, query string, topK int) ([]RetrievalRes
 		topK = 5
 	}
 	
-	// Update retriever topK
-	r.retriever.topK = topK
-	
-	// Retrieve relevant chunks
-	results, err := r.retriever.Retrieve(ctx, query, nil)
+	// Retrieve relevant chunks with specified topK
+	results, err := r.retriever.RetrieveWithTopK(ctx, query, topK, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve: %w", err)
 	}
@@ -191,11 +188,8 @@ func (r *RAG) QueryWithFilters(ctx context.Context, query string, topK int, filt
 		topK = 5
 	}
 	
-	// Update retriever topK
-	r.retriever.topK = topK
-	
-	// Retrieve relevant chunks with filters
-	results, err := r.retriever.Retrieve(ctx, query, filters)
+	// Retrieve relevant chunks with filters and specified topK
+	results, err := r.retriever.RetrieveWithTopK(ctx, query, topK, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve: %w", err)
 	}

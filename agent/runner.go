@@ -7,7 +7,6 @@ import (
 
 	"github.com/EmadMokhtar/gogent/llm"
 	"github.com/EmadMokhtar/gogent/memory"
-	"github.com/EmadMokhtar/gogent/rag"
 )
 
 // Runner executes agent workflows
@@ -48,7 +47,7 @@ type StreamChunk struct {
 // Result represents the result of an agent execution
 type Result struct {
 	Response  string                 `json:"response"`
-	Sources   []rag.RetrievalResult  `json:"sources,omitempty"`
+	Sources   []interface{}          `json:"sources,omitempty"`
 	ToolCalls []ToolCallResult       `json:"tool_calls,omitempty"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 	Duration  time.Duration          `json:"duration"`

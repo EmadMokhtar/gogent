@@ -57,13 +57,13 @@ func (a *Agent) Run(ctx context.Context, query string) (*Result, error) {
 	}
 	
 	// Get RAG sources if available
-	var sources []interface{}
+	var ragSources []interface{}
 	if a.opts.RAG != nil {
 		results, err := a.opts.RAG.Query(ctx, query, 3)
 		if err == nil {
 			// Convert to interface{} slice for Result
 			for _, r := range results {
-				sources = append(sources, r)
+				ragSources = append(ragSources, r)
 			}
 		}
 	}
@@ -85,15 +85,9 @@ func (a *Agent) Run(ctx context.Context, query string) (*Result, error) {
 		fmt.Printf("Warning: failed to save to memory: %v\n", err)
 	}
 	
-	// Convert sources back to the correct type
-	var ragSources []interface{}
-	if len(sources) > 0 {
-		ragSources = sources
-	}
-	
 	result := &Result{
 		Response: response.Content,
-		Sources:  convertSources(ragSources),
+		Sources:  ragSources,
 		Metadata: make(map[string]interface{}),
 		Duration: time.Since(startTime),
 	}
@@ -170,10 +164,4 @@ func (a *Agent) GetRegistry() *tools.Registry {
 // GetExecutor returns the tool executor
 func (a *Agent) GetExecutor() *tools.Executor {
 	return a.executor
-}
-
-// convertSources converts interface{} sources to RetrievalResult
-func convertSources(sources []interface{}) []interface{} {
-	// This is a placeholder - in a real implementation, you would do proper type conversion
-	return sources
 }

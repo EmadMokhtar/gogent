@@ -83,9 +83,12 @@ func (c *Chunker) ChunkDocument(doc Document) ([]Chunk, error) {
 		}
 		
 		// Move start position with overlap
-		start = end - c.config.ChunkOverlap
-		if start <= 0 {
+		newStart := end - c.config.ChunkOverlap
+		// Ensure we always move forward
+		if newStart <= start {
 			start = end
+		} else {
+			start = newStart
 		}
 	}
 	

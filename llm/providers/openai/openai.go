@@ -266,7 +266,8 @@ func (p *Provider) parseResponse(resp *chatCompletionResponse) *llm.Response {
 			for i, tc := range choice.Message.ToolCalls {
 				var input map[string]interface{}
 				if tc.Function.Arguments != "" {
-					json.Unmarshal([]byte(tc.Function.Arguments), &input)
+					// If unmarshaling fails, input will remain nil which is acceptable
+					_ = json.Unmarshal([]byte(tc.Function.Arguments), &input)
 				}
 				result.ToolCalls[i] = llm.ToolCall{
 					ID:    tc.ID,
@@ -293,11 +294,4 @@ func (p *Provider) parseError(statusCode int, body []byte) error {
 func toJSONString(v interface{}) string {
 	data, _ := json.Marshal(v)
 	return string(data)
-}
-
-// fromJSONString converts JSON string to map
-func fromJSONString(s string) map[string]interface{} {
-	var result map[string]interface{}
-	json.Unmarshal([]byte(s), &result)
-	return result
 }

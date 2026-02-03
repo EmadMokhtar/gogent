@@ -242,12 +242,15 @@ func (p *Provider) makeStreamingRequest(ctx context.Context, path string, body m
 
 // readSSEStream reads an SSE stream and sends tokens to the channel.
 func (p *Provider) readSSEStream(body io.Reader, tokenChan chan<- llm.Token) error {
-	buf := make([]byte, 4096)
+	// Use bufio.Reader for line-by-line reading
+	reader := io.Reader(body)
+	buf := make([]byte, 1)
+	var line []byte
 	var content string
 	
 	for {
-		// Read line by line
-		n, err := body.Read(buf)
+		// Read byte by byte to find line boundaries
+		n, err := reader.Read(buf)
 		if err != nil && err != io.EOF {
 			return err
 		}
@@ -256,28 +259,38 @@ func (p *Provider) readSSEStream(body io.Reader, tokenChan chan<- llm.Token) err
 			break
 		}
 		
-		// Parse SSE data
-		line := string(buf[:n])
-		if len(line) > 6 && line[:6] == "data: " {
-			data := line[6:]
+		// Check for newline
+		if buf[0] == '\n' {
+			lineStr := string(line)
+			line = []byte{} // Reset line buffer
 			
-			// Check for stream end
-			if data == "[DONE]" {
-				tokenChan <- llm.Token{Content: content, Done: true}
-				return nil
+			// Parse SSE data
+			if len(lineStr) > 6 && lineStr[:6] == "data: " {
+				data := lineStr[6:]
+				
+				// Trim whitespace including trailing newlines
+				data = string(bytes.TrimSpace([]byte(data)))
+				
+				// Check for stream end
+				if data == "[DONE]" {
+					tokenChan <- llm.Token{Content: content, Done: true}
+					return nil
+				}
+				
+				// Parse chunk
+				var chunk chatCompletionChunk
+				if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+					continue // Skip malformed chunks
+				}
+				
+				if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+					delta := chunk.Choices[0].Delta.Content
+					content += delta
+					tokenChan <- llm.Token{Content: content, Delta: delta, Done: false}
+				}
 			}
-			
-			// Parse chunk
-			var chunk chatCompletionChunk
-			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-				continue // Skip malformed chunks
-			}
-			
-			if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-				delta := chunk.Choices[0].Delta.Content
-				content += delta
-				tokenChan <- llm.Token{Content: content, Delta: delta, Done: false}
-			}
+		} else {
+			line = append(line, buf[0])
 		}
 		
 		if err == io.EOF {

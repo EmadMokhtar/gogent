@@ -116,7 +116,8 @@ func buildChatCompletionRequest(messages []types.Message, model string, opts *ll
 		"messages": convertToOpenAIMessages(messages),
 	}
 	
-	if opts.Temperature > 0 {
+	// Temperature of 0.0 is valid for deterministic outputs
+	if opts.Temperature >= 0 {
 		req["temperature"] = opts.Temperature
 	}
 	if opts.MaxTokens > 0 {

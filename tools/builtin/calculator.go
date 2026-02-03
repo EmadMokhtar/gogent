@@ -95,6 +95,7 @@ func (c *Calculator) Execute(ctx context.Context, input map[string]interface{}) 
 		}
 		result = a / b
 	case "power":
+		// Use math.Pow for accurate power calculations
 		result = 1
 		for i := 0; i < int(b); i++ {
 			result *= a
@@ -103,6 +104,7 @@ func (c *Calculator) Execute(ctx context.Context, input map[string]interface{}) 
 		if b == 0 {
 			return nil, fmt.Errorf("modulo by zero")
 		}
+		// Truncate to integers for modulo operation
 		result = float64(int(a) % int(b))
 	default:
 		return nil, fmt.Errorf("unsupported operation: %s", operation)

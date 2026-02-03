@@ -60,6 +60,20 @@ func (e *Executor) ExecuteToolCalls(ctx context.Context, toolCalls []types.ToolC
 		go func(idx int, toolCall types.ToolCall) {
 			defer wg.Done()
 			
+			// Check if context is cancelled before executing
+			select {
+			case <-ctx.Done():
+				errors[idx] = ctx.Err()
+				results[idx] = types.Message{
+					Role:       "tool",
+					ToolCallID: toolCall.ID,
+					Content:    fmt.Sprintf("Error: %s", ctx.Err().Error()),
+					Name:       toolCall.Function.Name,
+				}
+				return
+			default:
+			}
+			
 			result, err := e.ExecuteToolCall(ctx, toolCall)
 			if err != nil {
 				errors[idx] = err

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -124,14 +125,10 @@ func (stm *ShortTermMemory) Get(ctx context.Context, limit int) ([]Message, erro
 		}
 	}
 
-	// Sort by timestamp (oldest first)
-	for i := 0; i < len(messages); i++ {
-		for j := i + 1; j < len(messages); j++ {
-			if messages[i].Timestamp.After(messages[j].Timestamp) {
-				messages[i], messages[j] = messages[j], messages[i]
-			}
-		}
-	}
+	// Sort by timestamp (oldest first) - O(n log n)
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Timestamp.Before(messages[j].Timestamp)
+	})
 
 	// Apply limit
 	if limit > 0 && len(messages) > limit {

@@ -253,4 +253,3 @@ func (c *ParagraphChunker) splitIntoParagraphs(text string) []string {
 
 	return result
 }
-

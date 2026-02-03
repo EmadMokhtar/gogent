@@ -94,17 +94,10 @@ func (s *InMemoryVectorStore) Search(ctx context.Context, query []float32, k int
 		})
 	}
 
-	// Sort by score (descending for similarity, ascending for distance)
-	if s.metric == Euclidean {
-		// For Euclidean, we converted to similarity (higher is better)
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].Score > results[j].Score
-		})
-	} else {
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].Score > results[j].Score
-		})
-	}
+	// Sort by score (descending - higher scores are better)
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
 
 	// Limit to top k results
 	if k < len(results) {
